@@ -100,6 +100,14 @@ ggplot(df, aes(x = factor(usia), fill = sex)) +
 -   The largest population is in the ages 26–31, with a noticeable peak at age 28.
 -   The majority of the population is in their mid to late 20s, indicating Lazada’s strong appeal among younger adults.
 
+# Population Insight: Prompt
+
+```{r}
+cat('summary analysis of mcu result, count demographic by sex and age:')
+z = df %>% rename(age = usia) %>% group_by(sex, age) %>% summarize(count = n()) 
+print(as.data.frame(z))
+```
+
 # BMI Status (1)
 
 ```{r}
