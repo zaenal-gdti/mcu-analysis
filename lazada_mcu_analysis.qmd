@@ -1,8 +1,6 @@
 ---
 title: "Lazada MCU analysis"
-format:
-  pptx:
-    reference-doc: templatex.pptx
+format: pptx
 editor: visual
 ---
 
@@ -16,6 +14,8 @@ library(dplyr)
 library(forcats)
 library(stringr)
 library(scales)
+library(readxl)
+
 
 raw = read_excel('../data.xlsx')
 
