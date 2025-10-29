@@ -30,8 +30,6 @@ df <- raw %>% janitor::clean_names()
 # Map kolom yang pasti numeric / date
 df <- df %>%
   mutate(
-    # tanggal lahir format mm/dd/yyyy atau dd/mm/yyyy? Dari contoh tampak mm/dd/yyyy (e.g. 09/18/1998)
-    tgl_lahir = suppressWarnings(lubridate::mdy(tgl_lahir)),
     usia = suppressWarnings(as.numeric(usia)),
     sex = str_to_lower(sex) %>% recode("wanita"="Female","perempuan"="Female","laki-laki"="Male","pria"="Male", .default = NA_character_)
   )
