@@ -1,0 +1,758 @@
+---
+title: "Lazada MCU analysis"
+format:
+  pptx:
+    reference-doc: templatex.pptx
+editor: visual
+---
+
+```{r}
+#| echo: false
+#| result: hide
+library(ggplot2)
+library(readr)
+library(tidyverse)
+library(dplyr)
+library(forcats)
+library(stringr)
+library(scales)
+
+raw = read_delim('lazada_mcu_result_2.txt', delim = '\t')
+
+
+df <- raw %>% janitor::clean_names()
+
+
+# Normalisasi nama kolom -> snake_case
+df <- raw %>% janitor::clean_names()
+
+# ==== 2) Cast tipe data inti + perapihan nilai kategorikal -
+# Map kolom yang pasti numeric / date
+df <- df %>%
+  mutate(
+    # tanggal lahir format mm/dd/yyyy atau dd/mm/yyyy? Dari contoh tampak mm/dd/yyyy (e.g. 09/18/1998)
+    tgl_lahir = suppressWarnings(lubridate::mdy(tgl_lahir)),
+    usia = suppressWarnings(as.numeric(usia)),
+    sex = str_to_lower(sex) %>% recode("wanita"="Female","perempuan"="Female","laki-laki"="Male","pria"="Male", .default = NA_character_)
+  )
+
+
+norm_flag <- function(x) {
+  x %>%
+    str_trim() %>%
+    str_to_title() 
+}
+
+
+
+df <- df %>%
+  mutate(
+    parameter_kolesterol      = norm_flag(parameter_kolesterol),
+    parameter_asam_urat       = norm_flag(parameter_asam_urat),
+    parameter_tekanan_darah   = norm_flag(parameter_tekanan_darah),
+    parameter_gula_darah      = norm_flag(parameter_gula_darah),
+    parameter_bmi             = str_replace_all(parameter_bmi, fixed("BMI (Body Mass Index) : "), "") %>% norm_flag(),
+    parameter_fungsi_ginjal   = norm_flag(parameter_fungsi_ginjal),
+    parameter_framingham      = norm_flag(parameter_framingham),
+    # Bersihkan catatan
+    diagnoses = str_squish(diagnoses),
+    consultations = str_squish(consultations)
+  )
+
+
+```
+
+# Population Insight
+
+```{r}
+df <- df %>%
+  mutate(
+    sex = str_to_title(str_trim(sex)),
+    sex = recode(sex,
+                 "Laki-Laki" = "Male", "Pria" = "Male",
+                 "Wanita" = "Female", "Perempuan" = "Female")
+  ) %>%
+  filter(!is.na(usia) & usia > 0 & usia < 100)
+
+#  2) Stacked bar chart, show all ages on x-axis 
+ggplot(df, aes(x = factor(usia), fill = sex)) +
+  geom_bar(position = "stack", color = "white") +
+  scale_fill_manual(values = c("Male" = "#1F77B4", "Female" = "#FF69B4")) +
+  labs(
+    title = "Population Distribution by Age and Sex",
+    x = "Age (Years)",
+    y = "Number of Participants",
+    fill = "Sex"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 1, size = 8),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  ) +
+  scale_x_discrete(
+    breaks = sort(unique(df$usia))  # show *every* unique age
+  )
+```
+
+
+-   The total number of participants was 467.
+-   There were slightly more females (251; 53,7%) compared to males (216; 46,3%).
+-   The largest population is in the ages 26–31, with a noticeable peak at age 28.
+-   The majority of the population is in their mid to late 20s, indicating Lazada’s strong appeal among younger adults.
+
+# BMI Status (1)
+
+```{r}
+bmi_count <- df %>%
+  count(parameter_bmi, name = "count") %>%
+  arrange(desc(count))
+
+#  3) Vertical bar chart 
+ggplot(bmi_count, aes(x = fct_reorder(parameter_bmi, count), y = count, fill = parameter_bmi)) +
+  geom_col(show.legend = FALSE) +
+  labs(
+    title = "Distribution of BMI Categories",
+    x = "BMI Category",
+    y = "Number of Participants"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_brewer(palette = "Set2")
+
+```
+
+-   Obesity is one the fastest growing cause of death in Indonesia since 1990-2024.
+
+-   According to SKI, Indonesians with a BMI \> 25 (Obese) increased from 21.8% (2018) to 23.4% (2023).
+
+-   BMI range used is Asia-Pacific BMI due to Asian’s genetic make-up that promotes fat storage more than other races
+
+-   Obesity-overweight is very common at Lazada, reaching 49,8% (233) of population, This number is higher than National Prevalencedata. Normal population at 46,8% (219), and also had Underweight at 3,4%.
+
+# BMI Status (2)
+
+```{r}
+
+df <- df %>%
+  mutate(
+    age_group = cut(
+      usia,
+      breaks = c(-Inf, 24, 29, 34, 39, Inf ),
+      labels = c("<=24","25-29","30-34","35-39","40+"),
+      right = TRUE
+    )
+  )
+
+
+bmi_colors <- c(
+  "Underweight"   = "blue",
+  "Normal Weight" = "#006400",
+  "Overweight/Obese"    = "orange"
+)
+
+# Plot stacked bar count by Age, split by sex
+ggplot(df, aes(x = age_group, fill = parameter_bmi)) +
+  geom_bar(position = position_dodge(width = 0.8)) +
+  facet_wrap(~ sex, ncol = 2) +
+  scale_fill_manual(values = bmi_colors, drop = FALSE) +
+  labs(
+    title = "BMI Category by Age and Sex",
+    x = "Age",
+    y = "Count of Participants",
+    fill = "BMI Category"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "bottom",
+    strip.text = element_text(face = "bold")
+  )
+
+
+```
+
+
+-   Across all Ages, both males and females show a consistently high proportion of individuals classified as Overweight or Obese—generally around or exceeding 50% of each group’s total population.
+
+-   The most concerning observation appears in the 30–34 Age, where approximately 20% of females and 5% of males fall into the Overweight/Obese category. This age range represents the most productive stage of adulthood, suggesting early onset of lifestyle-related health risks that may impact long-term wellbeing and work productivity.
+
+# Measured Diabetes
+
+```{r}
+col_gd <- intersect(c("parameter_gula_darah","paramater_gula_darah"), names(df))[1]
+stopifnot(length(col_gd) == 1)
+
+# Clean, count, and relabel
+gd_count <- df %>%
+  transmute(gd = str_to_title(str_trim(.data[[col_gd]]))) %>%
+  filter(!is.na(gd) & gd != "") %>%
+  mutate(gd_label = recode(gd,
+                           "Hijau" = "Normal",
+                           "Kuning" = "Pre-diabetes",
+                           "Merah" = "Diabetes")) %>%
+  count(gd_label, name = "n") %>%
+  mutate(p = n / sum(n),
+         lbl = paste0(gd_label, " (", percent(p, accuracy = 0.1), ")")) %>%
+  arrange(desc(n))
+
+# Create pie chart
+ggplot(gd_count, aes(x = "", y = n, fill = gd_label)) +
+  geom_col(width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  geom_text(aes(label = lbl), position = position_stack(vjust = 0.5), size = 4) +
+  scale_fill_manual(values = c("Normal" = "#70AD47",
+                               "Pre-diabetes" = "#FFC000",
+                               "Diabetes" = "#E41A1C"),
+                    name = "Status") +
+
+  theme_void() +
+  theme(legend.position = "bottom")
+```
+
+**Insights**
+
+-   The majority (52.5%) of the population have normal blood sugar levels.
+-   A significant 46% (215) show Pre-Diabetes, indicating nearly half are at high risk of developing diabetes and 1.5% are already classified as Diabetes.
+-   Pre-diabetes itself has a higher likelihood of developing into full Diabetes. Especially when no intervention is given.
+-   The health implications of this data show regular screening is critical since both diabetes and pre-diabetes can be asymptomatic in early stages.
+
+# Measured Diabetes: Pre-Diabetes
+
+```{r}
+# Ensure correct ordering
+# Summarize only "Kuning" percentage by sex & Age
+kuning_summary <- df %>%
+  group_by(sex, age_group) %>%
+  summarise(
+    total = n(),
+    kuning_n = sum(parameter_gula_darah == "Kuning", na.rm = TRUE),
+    prop_kuning = kuning_n / total
+  ) %>%
+  ungroup()
+
+# Flip male percentages negative (for diverging effect)
+kuning_summary <- kuning_summary %>%
+  mutate(prop_signed = if_else(sex == "Male", -prop_kuning, prop_kuning))
+
+# Diverging bar chart
+ggplot(kuning_summary, aes(x = age_group, y = prop_signed, fill = sex)) +
+  geom_col(width = 0.7) +
+  coord_flip() +
+  scale_y_continuous(
+    labels = function(x) paste0(abs(x * 100), "%"),
+    limits = c(-1, 1),
+    breaks = seq(-1, 1, 0.2)
+  ) +
+  scale_fill_manual(values = c("Male" = "#1F77B4", "Female" = "#FF69B4")) +
+  geom_hline(yintercept = 0, color = "gray40", linetype = "dashed") +
+  labs(
+    title = "Proportion of Pre-Diabetes by Age and Sex",
+    subtitle = "Male bars extend left, Female bars extend right",
+    x = "Age",
+    y = "Percentage of Participants",
+    fill = "Sex"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "bottom",
+    strip.text = element_text(face = "bold")
+  )
+
+```
+
+
+
+**Insight**
+
+-   Among females, the proportion of individuals with prediabetes increases steadily with age. In the group under 24 years old, only about 20% are prediabetic. This percentage roughly doubles in the 25–29, 30–34, and 40+ Ages—each exceeding 40%—and reaches its highest point of over 60% among those aged 35–39.
+
+-   For males, the pattern appears less consistent. Surprisingly, nearly 80% of males under 24 are classified as prediabetic. The proportion then drops to around 40% for those aged 25–40, before rising again above 60% among those aged 40 and older.
+
+# Possible Chronic Kidney Disease
+
+```{r}
+
+
+#  1) Clean and standardize the column 
+col_ginjal <- intersect(c("parameter_fungsi_ginjal", "paramater_fungsi_ginjal"), names(df))[1]
+stopifnot(length(col_ginjal) == 1)
+
+ginjal_count <- df %>%
+  transmute(status = str_to_title(str_trim(.data[[col_ginjal]]))) %>%
+  filter(!is.na(status) & status != "") %>%
+  count(status, name = "n") %>%
+  mutate(
+    p = n / sum(n),
+    label = paste0(percent(p, accuracy = 0.1))
+  )
+
+ginjal_count <- ginjal_count %>% mutate(
+  status = recode(status,
+                           "Hijau" = "Normal",
+                           "Kuning" = "Mild-Moderate issues",
+                           "Merah" = "Severe Loss")
+
+)
+
+#  2) Plot: vertical bar chart with % inside bars 
+ggplot(ginjal_count, aes(x = reorder(status, -n), y = p, fill = status)) +
+  geom_col(width = 0.7, show.legend = FALSE) +
+  geom_text(aes(label = label), vjust = -0.5, size = 4) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 1)) +
+  scale_fill_manual(values = c(
+    "Normal" = "#70AD47",      # Normal
+    "Mild-Moderate issues" = "#FFC000",     # Mild/Borderline
+    "Severe Loss" = "#E41A1C"       # Impaired/Severe
+  )) +
+  labs(
+    title = "Distribution of Kidney Function",
+    x = "Category",
+    y = "Participant (%)"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    axis.text.x = element_text(angle = 0, vjust = 0.5),
+    panel.grid.minor = element_blank()
+  )
+
+```
+
+
+
+**Insight**
+
+-   Chronic Kidney Diseases (CKD) are silently progressive. Late recognition of CKD resulted in Kidney failure which requires hemodialysis and ever-increasing therapeutic cause
+-   The majority (83.7%) of the population show normal eGFR levels.
+-   1/6 of population already have mild-to-moderate kidney impairment, signaling early CKD risk.
+-   0.2% (1) present severe kidney function loss, a critical stage needing immediate management.
+
+Special things to note: - CKD is progressive, meaning, cases are Irreversible - Prompt care and management will not only prolong Kidney Health but also improve quality of life as well
+
+# Possible Chronic Kidney Disease: Focus on Mild-Moderate issues
+
+```{r}
+# Ensure correct ordering
+# Summarize only "Kuning" percentage by sex & Age
+kuning_summary <- df %>%
+  group_by(sex, age_group) %>%
+  summarise(
+    total = n(),
+    kuning_n = sum(parameter_fungsi_ginjal == "Kuning", na.rm = TRUE),
+    prop_kuning = kuning_n / total
+  ) %>%
+  ungroup()
+
+# Flip male percentages negative (for diverging effect)
+kuning_summary <- kuning_summary %>%
+  mutate(prop_signed = if_else(sex == "Male", -prop_kuning, prop_kuning))
+
+# Diverging bar chart
+ggplot(kuning_summary, aes(x = age_group, y = prop_signed, fill = sex)) +
+  geom_col(width = 0.7) +
+  coord_flip() +
+  scale_y_continuous(
+    labels = function(x) paste0(abs(x * 100), "%"),
+    limits = c(-1, 1),
+    breaks = seq(-1, 1, 0.2)
+  ) +
+  scale_fill_manual(values = c("Male" = "#1F77B4", "Female" = "#FF69B4")) +
+  geom_hline(yintercept = 0, color = "gray40", linetype = "dashed") +
+  labs(
+    title = "Proportion of Mild-Moderate Kidney Function by Age and Sex",
+    subtitle = "Male bars extend left, Female bars extend right",
+    x = "Age",
+    y = "Percentage of Participants",
+    fill = "Sex"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "bottom",
+    strip.text = element_text(face = "bold")
+  )
+
+```
+
+
+
+-   The mild-moderate kidney functional problem on male constantly almost reach 20% in every Age except 40+.
+-   The highest percentage of Female having mild-moderate kidney functional problem are at 25-29 yo Age with roughly 20%, as older the percentage drop with 35-39% is the lowest with around 5%.
+
+# Cholesterol Paramater
+
+```{r}
+
+
+#  1) Clean and standardize the column 
+col_ginjal <- intersect(c("parameter_kolesterol", "parameter_kolesterol"), names(df))[1]
+stopifnot(length(col_ginjal) == 1)
+
+ginjal_count <- df %>%
+  transmute(status = str_to_title(str_trim(.data[[col_ginjal]]))) %>%
+  filter(!is.na(status) & status != "") %>%
+  count(status, name = "n") %>%
+  mutate(
+    p = n / sum(n),
+    label = paste0(percent(p, accuracy = 0.1))
+  )
+
+ginjal_count <- ginjal_count %>% mutate(
+  status = recode(status,
+                           "Hijau" = "Normal",
+                           "Kuning" = "Dyslipidemia",
+                           "Merah" = "Elevated/Risk")
+
+)
+
+#  2) Plot: vertical bar chart with % inside bars 
+ggplot(ginjal_count, aes(x = reorder(status, n), y = p, fill = status)) +
+  geom_col(width = 0.7, show.legend = FALSE) +
+  geom_text(aes(label = label), vjust = -0.5, size = 4) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 1)) +
+  scale_fill_manual(values = c(
+    "Normal" = "#70AD47",      # Normal
+    "Dyslipidemia" = "#FFC000",     # Mild/Borderline
+    "Elevated/Risk" = "#E41A1C"       # Impaired/Severe
+  )) +
+  labs(
+    title = "Cholesterol Status Among Participants",
+    x = "Category",
+    y = "Participants"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    axis.text.x = element_text(angle = 0, vjust = 0.5),
+    panel.grid.minor = element_blank()
+  )
+
+```
+
+
+**Insight**
+
+-   Dyslipidemia is characterized by an imbalance in fat and cholesterol in the blood and is closely tied to other issue(s) mentioned in this report such as Obesity, Hypertension, Diabetes, and Kidney Disease
+-   Dyslipidemia causes the hardening of blood vessels, which in turn can cause much damage to various organ
+-   The majority (61.9%) of the population are diagnosed with Dyslipidemia, indicating a major lipid disorder burden.
+-   Over 96% of individuals have some form of lipid abnormality, greatly increasing cardiovascular disease risk.
+-   Special things to note: Very prevalent, highly recommended to intervene as a company-wide program
+
+# Cholesterol Paramater
+
+```{r}
+#  Summarize: percentage per category per Age and sex 
+df_summary <- df %>%
+  group_by(sex, age_group, parameter_kolesterol) %>%
+  summarise(n = n(), .groups = "drop_last") %>%
+  mutate(pct = n / sum(n)) %>%
+  ungroup()
+
+df_summary = df_summary %>% mutate(parameter_kolesterol = recode(parameter_kolesterol,
+                           "Hijau" = "Normal",
+                           "Kuning" = "Dyslipidemia",
+                           "Merah" = "Elevated/Risk")
+                      )
+
+#  Stacked bar chart with percentage labels 
+ggplot(df_summary, aes(x = age_group, y = pct, fill = parameter_kolesterol)) +
+  geom_col(position = "stack", width = 0.7) +
+  geom_text(aes(label = percent(pct, accuracy = 1)),
+            position = position_stack(vjust = 0.5),
+            size = 3.8, color = "black") +
+  facet_wrap(~ sex, ncol = 2) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  scale_fill_manual(values = c(
+    "Normal" = "#70AD47",      # Normal
+    "Dyslipidemia" = "#FFC000",     # Mild/Borderline
+    "Elevated/Risk" = "#E41A1C"       # Impaired/Severe
+  )) +
+  labs(
+    title = "Cholesterol Status Among Participants by Gender and Age",
+    x = "Age",
+    y = "Participant (%)",
+    fill = "Cholesterol Level"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "bottom",
+    strip.text = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+
+```
+
+**Insight**
+
+* Both male and female participants have very low proportions of normal cholesterol levels.
+* High cholesterol dominates across all Ages, particularly among females, where more than half of participants in every group fall into the high category.
+* The 25–34 age range represents the highest-risk period for both sexes.
+* Men show earlier and more persistent elevation, while women reach their peak risk in their 30s.
+* Early lifestyle modification, a healthy diet, and regular lipid screening before age 30 are essential to prevent long-term cardiovascular and metabolic problems.
+
+# Uric Acid
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(scales)
+
+#  1) Clean column name 
+col_asam <- intersect(c("parameter_asam_urat", "paramater_asam_urat"), names(df))[1]
+stopifnot(length(col_asam) == 1)
+
+#  2) Summarize counts and percentages 
+asam_summary <- df %>%
+  transmute(asam = str_to_title(str_trim(.data[[col_asam]]))) %>%
+  filter(!is.na(asam) & asam != "") %>%
+  count(asam, name = "n") %>%
+  mutate(
+    pct = n / sum(n),
+    label = paste0(percent(pct, accuracy = 0.1))
+  )
+
+#  3) Create bar chart (counts on y-axis, labels as % above bars) 
+ggplot(asam_summary, aes(x = reorder(asam, -n), y = n, fill = asam)) +
+  geom_col(width = 0.7, show.legend = FALSE) +
+  geom_text(aes(label = label), vjust = -0.4, size = 4) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  scale_fill_manual(
+    values = c("Normal" = "#70AD47", "Hyperuricemia" = "#E41A1C")
+  ) +
+  labs(
+    title = "Overview of Uric Acid Level",
+    x = "Category",
+    y = "Participants"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(vjust = 0.5)
+  )
+
+```
+
+
+
+**Insight**
+
+* Hyperuricaemia occurs when there’s a build-up of Uric Acid in the bloodstream. Uric Acid itself is a by-product of protein metabolism
+* Hyperuricaemia is very common and doesn’t always cause symptoms. Symptoms usually occurs due to deposition of Uric Acid, especially on joints and/or kidney
+* During measurements, around 27,8 % has Hyperuricemia
+* Specials things to note:
+
+  - Hyperuricemia is highly manageable
+  - Encouraging participants for regular hydration is key on maintaining uric acid levels
+  -There maybe some participants needing more care (e.g. those developed gout / kidney stones) and may need medication to control uric acid levels
+
+
+# Uric Acid (2)
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(forcats)
+library(scales)
+
+#  1) Clean & prep 
+col_asam <- intersect(c("parameter_asam_urat", "paramater_asam_urat"), names(df))[1]
+stopifnot(length(col_asam) == 1)
+
+df_plot <- df %>%
+  mutate(
+    sex = str_to_title(str_trim(sex)),
+    sex = recode(sex,
+                 "Laki-Laki"="Male", "Pria"="Male",
+                 "Wanita"="Female", "Perempuan"="Female"),
+    parameter_asam_urat = str_to_title(str_trim(.data[[col_asam]]))
+  )
+
+#  2) Fixed Ages 
+df_plot <- df_plot %>%
+  mutate(age_group = cut(
+    usia,
+    breaks = c(-Inf, 24, 29, 34, 39, Inf),
+    labels = c("<=24", "25-29", "30-34", "35-39", "40+"),
+    right = TRUE
+  ))
+
+#  3) Compute % of Hyperuricemia within each sex per Age 
+df_pct <- df_plot %>%
+  group_by(sex, age_group) %>%
+  summarise(
+    total = n(),
+    hyper = sum(parameter_asam_urat == "Hyperuricemia", na.rm = TRUE),
+    pct = hyper / total
+  ) %>%
+  ungroup() %>%
+  mutate(
+    pct_signed = if_else(sex == "Male", -pct, pct),
+    age_group = factor(age_group, levels = c("<=24","25-29","30-34","35-39","40+"))
+  )
+
+#  4) Plot diverging percentage bar chart 
+ggplot(df_pct, aes(y = age_group, x = pct_signed, fill = sex)) +
+  geom_col(width = 0.7) +
+  geom_text(
+    aes(label = percent(abs(pct), accuracy = 1)),
+    position = position_stack(vjust = 0.5),
+    size = 3.8,
+    color = "black"
+  ) +
+  scale_x_continuous(labels = percent_format(accuracy = 1)) +
+  scale_fill_manual(values = c("Male"="#1F77B4", "Female"="#E377C2")) +
+  labs(
+    title = "Distribution of Hyperuricemia breakdown by Gender and Age",
+    x = "Participant (%)",
+    y = "Age",
+    fill = "Gender"
+  ) +
+  coord_cartesian(expand = TRUE) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
+
+
+```
+
+
+**Insight**
+
+
+* Men show earlier onset of Hyperuricemia, even under 25.
+* Women’s rates increase steadily, peaking after 35.
+* By age 40+, 1 in 3 men and nearly 1 in 2 women have high uric acid levels.
+* This mirrors the pattern seen in other metabolic indicators (cholesterol, BMI).
+
+Conclusion
+
+Hyperuricemia is common across all Ages, rising sharply with age. Early onset in men and late acceleration in women suggest that preventive screening and dietary control should start before age 30 for both sexes, with emphasis on weight control and hydration to prevent gout and kidney complications.
+
+# Multiple Risk Factors
+
+```{r}
+
+
+df <- df %>%
+  mutate(across(
+    c(parameter_kolesterol, parameter_bmi, parameter_gula_darah,
+      parameter_asam_urat, parameter_fungsi_ginjal),
+    ~ str_to_title(str_trim(.))
+  )) %>%
+  mutate(age_group = factor(age_group,
+                            levels = c("<=24","25-29","30-34","35-39","40+")))
+
+#  2) Compute risk flags and total number of risk factors 
+df_risk <- df %>%
+  mutate(
+    risk_kolesterol = parameter_kolesterol %in% c("Kuning","Merah"),
+    risk_bmi        = parameter_bmi == "Overweight",
+    risk_gula       = parameter_gula_darah %in% c("Kuning","Merah"),
+    risk_asam_urat  = parameter_asam_urat == "Hyperuricemia",
+    risk_ginjal     = parameter_fungsi_ginjal %in% c("Kuning","Merah"),
+    total_risk      = risk_kolesterol + risk_bmi + risk_gula + risk_asam_urat + risk_ginjal,
+    multi_risk      = total_risk >= 3  # flag for 2 or more risks
+  )
+
+#  3) Summarize percentage of people with >=2 risks by age_group & sex 
+risk_summary <- df_risk %>%
+  group_by(age_group, sex) %>%
+  summarise(
+    total_people = n(),
+    n_multi_risk = sum(multi_risk, na.rm = TRUE),
+    pct_multi_risk = n_multi_risk / total_people,
+    .groups = "drop"
+  ) %>%
+  mutate(
+    sex = factor(sex, levels = c("Male", "Female"))  # Swap or customize order
+  )
+
+
+#  4) Plot percentage by Age, split columns by sex 
+
+
+ggplot(risk_summary, aes(x = age_group, y = n_multi_risk, fill = sex)) +
+  geom_col(width = 0.7, show.legend = FALSE) +
+  geom_text(aes(label = percent(pct_multi_risk, accuracy = 0.1)),
+            vjust = -0.4, size = 3.8) +
+  facet_wrap(~ sex, ncol = 2) +
+  #scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 1)) +
+  scale_fill_manual(values = c("Male" = "#1F77B4", "Female" = "#FF69B4")) +
+  labs(
+    title = "Percentage of People with ≥3 Risk Factors by Age and Sex",
+    x = "Age",
+    y = "Participants with ≥3 Risks"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    strip.text = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+
+
+
+```
+
+
+
+We compiled all health measurements into a set of risk factors, defined as follows:
+
+* Cholesterol Level: Dyslipidemia and Elevated
+* Kidney Function: Mild to Moderate Impairment and Severe Loss
+* Diabetes Status: Pre-Diabetes and Diabetes
+* Hypertension Status: Pre-Hypertension, Grade 1, and Grade 2
+* BMI Status: Overweight or Obese
+
+
+
+**Insight**
+
+* Risk accumulation with age: The likelihood of having multiple risk factors rises steadily from under 25 to over 40.
+* Early onset in males: Men begin showing multi-risk profiles earlier (some even before 25).
+* Higher risk in older women: After 35, women’s multi-risk percentage surpasses men’s, reaching 44% at 40+.
+* At 40+, about half of participants of both sexes carry two or more major health risks.
+
+The data shows clear age-related risk accumulation, with metabolic and cardiovascular issues clustering over time.
+Preventive interventions should start before age 30, targeting both sexes, with stronger emphasis on early male screening and sustained female monitoring after 35.
+
+# Top 15 Most Frequent Diagnosis
+
+```{r}
+library(stringr)
+
+# Assume your dataframe is df and column name is "diagnosis"
+# If it’s called something slightly different (e.g. "diagnoses"), change below.
+
+diagnosis_freq <- df %>%
+  select(diagnoses) %>%
+  filter(!is.na(diagnoses) & diagnoses != "") %>%
+  mutate(diagnoses =  str_replace_all(diagnoses, '; ', ';')) %>%
+  separate_rows(diagnoses, sep = ";") %>%        # Split by ;
+  mutate(diagnoses =  str_trim(diagnoses)) %>%    # Remove extra spaces
+  group_by(diagnoses) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(desc(count))
+
+# View top 20 most frequent diagnoses
+
+library(ggplot2)
+
+diagnosis_freq %>%
+  slice_max(count, n = 15) %>%
+  ggplot(aes(x = reorder(diagnoses, count), y = count)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 15 Most Frequent Diagnoses",
+    x = "Diagnosis",
+    y = "Count"
+  ) +
+  theme_minimal(base_size = 12)
+
+```
+
+
+**Insight**
+
+Analysis of the top 15 most frequent diagnoses reveals a dominant trend toward metabolic, lifestyle, and ergonomic health issues. The pattern suggests a population with increasing cardiometabolic risk factors, compounded by sedentary behaviors, screen exposure, and variable preventive health practices. The findings reflect a common modern-urban health profile: high prevalence of refractive eye problems, overweight/obesity, dyslipidemia, hyperuricemia, and early hypertensive or diabetic states.
