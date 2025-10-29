@@ -95,7 +95,6 @@ ggplot(df, aes(x = factor(usia), fill = sex)) +
   )
 ```
 
-
 -   The total number of participants was 467.
 -   There were slightly more females (251; 53,7%) compared to males (216; 46,3%).
 -   The largest population is in the ages 26–31, with a noticeable peak at age 28.
@@ -170,7 +169,6 @@ ggplot(df, aes(x = age_group, fill = parameter_bmi)) +
 
 
 ```
-
 
 -   Across all Ages, both males and females show a consistently high proportion of individuals classified as Overweight or Obese—generally around or exceeding 50% of each group’s total population.
 
@@ -260,8 +258,6 @@ ggplot(kuning_summary, aes(x = age_group, y = prop_signed, fill = sex)) +
 
 ```
 
-
-
 **Insight**
 
 -   Among females, the proportion of individuals with prediabetes increases steadily with age. In the group under 24 years old, only about 20% are prediabetic. This percentage roughly doubles in the 25–29, 30–34, and 40+ Ages—each exceeding 40%—and reaches its highest point of over 60% among those aged 35–39.
@@ -317,8 +313,6 @@ ggplot(ginjal_count, aes(x = reorder(status, -n), y = p, fill = status)) +
 
 ```
 
-
-
 **Insight**
 
 -   Chronic Kidney Diseases (CKD) are silently progressive. Late recognition of CKD resulted in Kidney failure which requires hemodialysis and ever-increasing therapeutic cause
@@ -372,8 +366,6 @@ ggplot(kuning_summary, aes(x = age_group, y = prop_signed, fill = sex)) +
 
 ```
 
-
-
 -   The mild-moderate kidney functional problem on male constantly almost reach 20% in every Age except 40+.
 -   The highest percentage of Female having mild-moderate kidney functional problem are at 25-29 yo Age with roughly 20%, as older the percentage drop with 35-39% is the lowest with around 5%.
 
@@ -425,7 +417,6 @@ ggplot(ginjal_count, aes(x = reorder(status, n), y = p, fill = status)) +
   )
 
 ```
-
 
 **Insight**
 
@@ -481,11 +472,11 @@ ggplot(df_summary, aes(x = age_group, y = pct, fill = parameter_kolesterol)) +
 
 **Insight**
 
-* Both male and female participants have very low proportions of normal cholesterol levels.
-* High cholesterol dominates across all Ages, particularly among females, where more than half of participants in every group fall into the high category.
-* The 25–34 age range represents the highest-risk period for both sexes.
-* Men show earlier and more persistent elevation, while women reach their peak risk in their 30s.
-* Early lifestyle modification, a healthy diet, and regular lipid screening before age 30 are essential to prevent long-term cardiovascular and metabolic problems.
+-   Both male and female participants have very low proportions of normal cholesterol levels.
+-   High cholesterol dominates across all Ages, particularly among females, where more than half of participants in every group fall into the high category.
+-   The 25–34 age range represents the highest-risk period for both sexes.
+-   Men show earlier and more persistent elevation, while women reach their peak risk in their 30s.
+-   Early lifestyle modification, a healthy diet, and regular lipid screening before age 30 are essential to prevent long-term cardiovascular and metabolic problems.
 
 # Uric Acid
 
@@ -530,19 +521,18 @@ ggplot(asam_summary, aes(x = reorder(asam, -n), y = n, fill = asam)) +
 
 ```
 
-
-
 **Insight**
 
-* Hyperuricaemia occurs when there’s a build-up of Uric Acid in the bloodstream. Uric Acid itself is a by-product of protein metabolism
-* Hyperuricaemia is very common and doesn’t always cause symptoms. Symptoms usually occurs due to deposition of Uric Acid, especially on joints and/or kidney
-* During measurements, around 27,8 % has Hyperuricemia
-* Specials things to note:
+-   Hyperuricaemia occurs when there’s a build-up of Uric Acid in the bloodstream. Uric Acid itself is a by-product of protein metabolism
 
-  - Hyperuricemia is highly manageable
-  - Encouraging participants for regular hydration is key on maintaining uric acid levels
-  -There maybe some participants needing more care (e.g. those developed gout / kidney stones) and may need medication to control uric acid levels
+-   Hyperuricaemia is very common and doesn’t always cause symptoms. Symptoms usually occurs due to deposition of Uric Acid, especially on joints and/or kidney
 
+-   During measurements, around 27,8 % has Hyperuricemia
+
+-   Specials things to note:
+
+    -   Hyperuricemia is highly manageable
+    -   Encouraging participants for regular hydration is key on maintaining uric acid levels -There maybe some participants needing more care (e.g. those developed gout / kidney stones) and may need medication to control uric acid levels
 
 # Uric Acid (2)
 
@@ -616,14 +606,12 @@ ggplot(df_pct, aes(y = age_group, x = pct_signed, fill = sex)) +
 
 ```
 
-
 **Insight**
 
-
-* Men show earlier onset of Hyperuricemia, even under 25.
-* Women’s rates increase steadily, peaking after 35.
-* By age 40+, 1 in 3 men and nearly 1 in 2 women have high uric acid levels.
-* This mirrors the pattern seen in other metabolic indicators (cholesterol, BMI).
+-   Men show earlier onset of Hyperuricemia, even under 25.
+-   Women’s rates increase steadily, peaking after 35.
+-   By age 40+, 1 in 3 men and nearly 1 in 2 women have high uric acid levels.
+-   This mirrors the pattern seen in other metabolic indicators (cholesterol, BMI).
 
 Conclusion
 
@@ -694,27 +682,22 @@ ggplot(risk_summary, aes(x = age_group, y = n_multi_risk, fill = sex)) +
 
 ```
 
-
-
 We compiled all health measurements into a set of risk factors, defined as follows:
 
-* Cholesterol Level: Dyslipidemia and Elevated
-* Kidney Function: Mild to Moderate Impairment and Severe Loss
-* Diabetes Status: Pre-Diabetes and Diabetes
-* Hypertension Status: Pre-Hypertension, Grade 1, and Grade 2
-* BMI Status: Overweight or Obese
-
-
+-   Cholesterol Level: Dyslipidemia and Elevated
+-   Kidney Function: Mild to Moderate Impairment and Severe Loss
+-   Diabetes Status: Pre-Diabetes and Diabetes
+-   Hypertension Status: Pre-Hypertension, Grade 1, and Grade 2
+-   BMI Status: Overweight or Obese
 
 **Insight**
 
-* Risk accumulation with age: The likelihood of having multiple risk factors rises steadily from under 25 to over 40.
-* Early onset in males: Men begin showing multi-risk profiles earlier (some even before 25).
-* Higher risk in older women: After 35, women’s multi-risk percentage surpasses men’s, reaching 44% at 40+.
-* At 40+, about half of participants of both sexes carry two or more major health risks.
+-   Risk accumulation with age: The likelihood of having multiple risk factors rises steadily from under 25 to over 40.
+-   Early onset in males: Men begin showing multi-risk profiles earlier (some even before 25).
+-   Higher risk in older women: After 35, women’s multi-risk percentage surpasses men’s, reaching 44% at 40+.
+-   At 40+, about half of participants of both sexes carry two or more major health risks.
 
-The data shows clear age-related risk accumulation, with metabolic and cardiovascular issues clustering over time.
-Preventive interventions should start before age 30, targeting both sexes, with stronger emphasis on early male screening and sustained female monitoring after 35.
+The data shows clear age-related risk accumulation, with metabolic and cardiovascular issues clustering over time. Preventive interventions should start before age 30, targeting both sexes, with stronger emphasis on early male screening and sustained female monitoring after 35.
 
 # Top 15 Most Frequent Diagnosis
 
@@ -751,7 +734,6 @@ diagnosis_freq %>%
   theme_minimal(base_size = 12)
 
 ```
-
 
 **Insight**
 
