@@ -1,5 +1,5 @@
 ---
-title: "Lazada MCU analysis"
+title: "MCU analysis"
 format: pptx
 editor: visual
 ---
@@ -24,7 +24,6 @@ df <- raw %>% janitor::clean_names()
 
 
 # Normalisasi nama kolom -> snake_case
-df <- raw %>% janitor::clean_names()
 
 # ==== 2) Cast tipe data inti + perapihan nilai kategorikal -
 # Map kolom yang pasti numeric / date
@@ -98,7 +97,7 @@ ggplot(df, aes(x = factor(usia), fill = sex)) +
 -   The largest population is in the ages 26–31, with a noticeable peak at age 28.
 -   The majority of the population is in their mid to late 20s, indicating Lazada’s strong appeal among younger adults.
 
-# Population Insight: Prompt
+# Population Insight (prompt)
 
 ```{r}
 cat('summary analysis of mcu result, count demographic by sex and age:')
@@ -134,6 +133,16 @@ ggplot(bmi_count, aes(x = fct_reorder(parameter_bmi, count), y = count, fill = p
 -   BMI range used is Asia-Pacific BMI due to Asian’s genetic make-up that promotes fat storage more than other races
 
 -   Obesity-overweight is very common at Lazada, reaching 49,8% (233) of population, This number is higher than National Prevalencedata. Normal population at 46,8% (219), and also had Underweight at 3,4%.
+
+# BMI Status (1) (prompt)
+
+```{r}
+cat('summary analysis of mcu result, bmi distribution:')
+z <- df %>%
+  count(parameter_bmi, name = "count") %>%
+  arrange(desc(count))
+print(as.data.frame(z))
+```
 
 # BMI Status (2)
 
@@ -180,6 +189,17 @@ ggplot(df, aes(x = age_group, fill = parameter_bmi)) +
 
 -   The most concerning observation appears in the 30–34 Age, where approximately 20% of females and 5% of males fall into the Overweight/Obese category. This age range represents the most productive stage of adulthood, suggesting early onset of lifestyle-related health risks that may impact long-term wellbeing and work productivity.
 
+# BMI Status (2): Prompt
+
+```{r}
+cat('summary analysis of mcu result, bmi distribution breakdown by age and sex')
+z <- df %>% group_by(age_group, sex, parameter_bmi) %>%
+  summarize(count = n()) %>%
+  arrange(desc(count))
+print(as.data.frame(z))
+
+```
+
 # Measured Diabetes
 
 ```{r}
@@ -219,6 +239,14 @@ ggplot(gd_count, aes(x = "", y = n, fill = gd_label)) +
 -   A significant 46% (215) show Pre-Diabetes, indicating nearly half are at high risk of developing diabetes and 1.5% are already classified as Diabetes.
 -   Pre-diabetes itself has a higher likelihood of developing into full Diabetes. Especially when no intervention is given.
 -   The health implications of this data show regular screening is critical since both diabetes and pre-diabetes can be asymptomatic in early stages.
+
+# Measured Diabetes (prompt)
+
+```{r}
+cat('summary analysis of mcu result blood sugar level breakdown by sex and age group:')
+z <- gd_count %>% rename(diabetes_status = gd_label, count=n, proportion = p) %>% select(-lbl)
+print(as.data.frame(z))
+```
 
 # Measured Diabetes: Pre-Diabetes
 
@@ -269,6 +297,14 @@ ggplot(kuning_summary, aes(x = age_group, y = prop_signed, fill = sex)) +
 -   Among females, the proportion of individuals with prediabetes increases steadily with age. In the group under 24 years old, only about 20% are prediabetic. This percentage roughly doubles in the 25–29, 30–34, and 40+ Ages—each exceeding 40%—and reaches its highest point of over 60% among those aged 35–39.
 
 -   For males, the pattern appears less consistent. Surprisingly, nearly 80% of males under 24 are classified as prediabetic. The proportion then drops to around 40% for those aged 25–40, before rising again above 60% among those aged 40 and older.
+
+# Measured Diabetes: Pre-Diabetes (prompt)
+
+```{r}
+cat('summary analysis of mcu result on prediabetic participant only breakdown by sex and age group:')
+z <- kuning_summary %>% rename(count = kuning_n , proportion=prop_kuning) %>% select(-prop_signed)
+print(as.data.frame(z))
+```
 
 # Possible Chronic Kidney Disease
 
@@ -328,6 +364,14 @@ ggplot(ginjal_count, aes(x = reorder(status, -n), y = p, fill = status)) +
 
 Special things to note: - CKD is progressive, meaning, cases are Irreversible - Prompt care and management will not only prolong Kidney Health but also improve quality of life as well
 
+# Possible Chronic Kidney Disease (prompt)
+
+```{r}
+cat('summary analysis of mcu result on Possible Chronic Kidney Disease:')
+z <- ginjal_count %>% rename(count = n , proportion=p) %>% select(-label)
+print(as.data.frame(z))
+```
+
 # Possible Chronic Kidney Disease: Focus on Mild-Moderate issues
 
 ```{r}
@@ -374,6 +418,14 @@ ggplot(kuning_summary, aes(x = age_group, y = prop_signed, fill = sex)) +
 
 -   The mild-moderate kidney functional problem on male constantly almost reach 20% in every Age except 40+.
 -   The highest percentage of Female having mild-moderate kidney functional problem are at 25-29 yo Age with roughly 20%, as older the percentage drop with 35-39% is the lowest with around 5%.
+
+# Possible Chronic Kidney Disease: Focus on Mild-Moderate issues (prompt)
+
+```{r}
+cat('summary analysis of mcu result on Possible Chronic Kidney Disease, Focus on Mild-Moderate issues breakdown by sex and age group:')
+z <- kuning_summary %>% rename(count = kuning_n  , proportion=prop_kuning ) %>% select(-prop_signed)
+print(as.data.frame(z))
+```
 
 # Cholesterol Paramater
 
@@ -432,7 +484,15 @@ ggplot(ginjal_count, aes(x = reorder(status, n), y = p, fill = status)) +
 -   Over 96% of individuals have some form of lipid abnormality, greatly increasing cardiovascular disease risk.
 -   Special things to note: Very prevalent, highly recommended to intervene as a company-wide program
 
-# Cholesterol Paramater
+# Cholesterol Paramater (prompt)
+
+```{r}
+cat('summary analysis of mcu result on Cholesterol Paramater:')
+z <- ginjal_count %>% rename(count = n  , proportion=p ) %>% select(-label)
+print(as.data.frame(z))
+```
+
+# Cholesterol Paramater breakdown by Age and sex
 
 ```{r}
 #  Summarize: percentage per category per Age and sex 
@@ -483,6 +543,14 @@ ggplot(df_summary, aes(x = age_group, y = pct, fill = parameter_kolesterol)) +
 -   The 25–34 age range represents the highest-risk period for both sexes.
 -   Men show earlier and more persistent elevation, while women reach their peak risk in their 30s.
 -   Early lifestyle modification, a healthy diet, and regular lipid screening before age 30 are essential to prevent long-term cardiovascular and metabolic problems.
+
+# Cholesterol Paramater breakdown by Age and sex (prompt)
+
+```{r}
+cat('summary analysis of mcu result on Cholesterol Paramater breakdown by age and sex:')
+z <- df_summary %>% rename(cholesterol_level=parameter_kolesterol, count = n  , proportion=pct ) 
+print(as.data.frame(z))
+```
 
 # Uric Acid
 
@@ -539,6 +607,14 @@ ggplot(asam_summary, aes(x = reorder(asam, -n), y = n, fill = asam)) +
 
     -   Hyperuricemia is highly manageable
     -   Encouraging participants for regular hydration is key on maintaining uric acid levels -There maybe some participants needing more care (e.g. those developed gout / kidney stones) and may need medication to control uric acid levels
+
+# Uric Acid (prompt)
+
+```{r}
+cat('summary analysis of mcu result on distribution of uric acid level:')
+z <- asam_summary %>% rename(uric_acid=asam, count = n  , proportion=pct )  %>% select(-label)
+print(as.data.frame(z))
+```
 
 # Uric Acid (2)
 
@@ -623,6 +699,14 @@ Conclusion
 
 Hyperuricemia is common across all Ages, rising sharply with age. Early onset in men and late acceleration in women suggest that preventive screening and dietary control should start before age 30 for both sexes, with emphasis on weight control and hydration to prevent gout and kidney complications.
 
+# Uric Acid (2) (prompt)
+
+```{r}
+cat('summary analysis of mcu result on distribution of uric acid level focus on Hyperuricemia breakdown by sex and age:')
+z <- df_pct %>% rename(count=hyper   ,  proportion=pct )  %>% select(-pct_signed)
+print(as.data.frame(z))
+```
+
 # Multiple Risk Factors
 
 ```{r}
@@ -705,6 +789,25 @@ We compiled all health measurements into a set of risk factors, defined as follo
 
 The data shows clear age-related risk accumulation, with metabolic and cardiovascular issues clustering over time. Preventive interventions should start before age 30, targeting both sexes, with stronger emphasis on early male screening and sustained female monitoring after 35.
 
+# Multiple Risk Factors (prompt)
+
+```{r}
+cat('
+context risk factors:
+-   Cholesterol Level: Dyslipidemia and Elevated
+-   Kidney Function: Mild to Moderate Impairment and Severe Loss
+-   Diabetes Status: Pre-Diabetes and Diabetes
+-   Hypertension Status: Pre-Hypertension, Grade 1, and Grade 2
+-   BMI Status: Overweight or Obese
+
+summary analysis of mcu result on participants with more then 3 risk factor breakdown by gender and age:
+    
+    ')
+z <- risk_summary %>% rename(count=n_multi_risk    ,  proportion=pct_multi_risk ) 
+print(as.data.frame(z))
+
+```
+
 # Top 15 Most Frequent Diagnosis
 
 ```{r}
@@ -744,3 +847,13 @@ diagnosis_freq %>%
 **Insight**
 
 Analysis of the top 15 most frequent diagnoses reveals a dominant trend toward metabolic, lifestyle, and ergonomic health issues. The pattern suggests a population with increasing cardiometabolic risk factors, compounded by sedentary behaviors, screen exposure, and variable preventive health practices. The findings reflect a common modern-urban health profile: high prevalence of refractive eye problems, overweight/obesity, dyslipidemia, hyperuricemia, and early hypertensive or diabetic states.
+
+# Top 15 Most Frequent Diagnosis (prompt)
+
+```{r}
+cat('summary analysis of mcu result on top 15 diagnosis')
+z <- diagnosis_freq %>%
+  slice_max(count, n = 15)
+print(as.data.frame(z))
+
+```
