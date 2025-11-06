@@ -50,7 +50,7 @@ df <- df %>%
     parameter_gula_darah      = norm_flag(parameter_gula_darah),
     parameter_bmi             = str_replace_all(parameter_bmi, fixed("BMI (Body Mass Index) : "), "") %>% norm_flag(),
     parameter_fungsi_ginjal   = norm_flag(parameter_fungsi_ginjal),
-    parameter_framingham      = norm_flag(parameter_framingham),
+    #parameter_framingham      = norm_flag(parameter_framingham),
     # Bersihkan catatan
     diagnoses = str_squish(diagnoses),
     consultations = str_squish(consultations)

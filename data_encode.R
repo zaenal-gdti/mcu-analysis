@@ -1,9 +1,9 @@
 library(tidyverse)
 library(readxl)
-
+library(writexl)
 
 df <- read_excel(
-  '../data_input.xlsx'
+  'data_input.xlsx'
 )
 
 df <- df %>%
@@ -99,4 +99,4 @@ df <- df %>% rename(sex = gender,
 
     
     
-df %>% write_excel('../data.xlsx', overwrite = TRUE)
+df %>% write_xlsx('data.xlsx')
