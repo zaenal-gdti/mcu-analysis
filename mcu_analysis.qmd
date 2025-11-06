@@ -53,7 +53,7 @@ df <- df %>%
     #parameter_framingham      = norm_flag(parameter_framingham),
     # Bersihkan catatan
     diagnoses = str_squish(diagnoses),
-    consultations = str_squish(consultations)
+    #consultations = str_squish(consultations)
   )
 
 
