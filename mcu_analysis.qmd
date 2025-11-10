@@ -30,7 +30,7 @@ df <- raw %>% janitor::clean_names()
 df <- df %>%
   mutate(
     usia = suppressWarnings(as.numeric(usia)),
-    sex = str_to_lower(sex) %>% recode("wanita"="Female","perempuan"="Female","laki-laki"="Male","pria"="Male", .default = NA_character_)
+    sex = str_to_lower(sex) %>% recode("wanita"="Female","perempuan"="Female","laki-laki"="Male","pria"="Male", .default = sex)
   )
 
 
