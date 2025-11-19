@@ -817,13 +817,16 @@ library(stringr)
 # If it’s called something slightly different (e.g. "diagnoses"), change below.
 
 diagnosis_freq <- df %>%
-  select(diagnoses) %>%
+  select(diagnose) %>% rename(diagnoses = diagnose) %>%
   filter(!is.na(diagnoses) & diagnoses != "") %>%
   mutate(diagnoses =  str_replace_all(diagnoses, '; ', ';')) %>%
-  mutate(diagnoses =  str_replace_all(diagnoses, 'Berdasarkan pemeriksaan yang telah dilakukan dapat disimpulkan sebagai berikut :\n', ';')) %>%
+  mutate(diagnoses =  str_replace_all(diagnoses, 'Berdasarkan pemeriksaan yang telah dilakukan dapat disimpulkan sebagai berikut :', '')) %>%
   separate_rows(diagnoses, sep = ";") %>%        # Split by ;
-    separate_rows(diagnoses, sep = "\n") %>%        # Split by ;
+  separate_rows(diagnoses, sep = "\n") %>%        # Split by ;
   mutate(diagnoses =  str_trim(diagnoses)) %>%    # Remove extra spaces
+  mutate(diagnoses =  str_replace_all(diagnoses, '\\.', ''))  %>%
+  mutate(diagnoses =  str_replace_all(diagnoses, '\\,', '')) %>%
+  filter(!is.na(diagnoses) & diagnoses != "") %>%
   group_by(diagnoses) %>%
   summarise(count = n(), .groups = "drop") %>%
   arrange(desc(count))

@@ -100,3 +100,5 @@ df <- df %>% rename(sex = gender,
     
     
 df %>% write_xlsx('data.xlsx')
+
+
