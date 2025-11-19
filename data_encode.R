@@ -85,7 +85,7 @@ df <- df %>%
   )
 
 df <- df %>% rename(sex = gender, 
-                    parameter_kolesterol = total_cholesterol,
+                    parameter_kolesterol = cholesterol_category,
                     parameter_asam_urat  = uric_acid_status,
                     parameter_bmi    = bmi_category   ,
                     parameter_gula_darah  = glucose_category,

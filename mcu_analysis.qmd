@@ -821,10 +821,13 @@ diagnosis_freq <- df %>%
   filter(!is.na(diagnoses) & diagnoses != "") %>%
   mutate(diagnoses =  str_replace_all(diagnoses, '; ', ';')) %>%
   separate_rows(diagnoses, sep = ";") %>%        # Split by ;
+    separate_rows(diagnoses, sep = "\n") %>%        # Split by ;
   mutate(diagnoses =  str_trim(diagnoses)) %>%    # Remove extra spaces
   group_by(diagnoses) %>%
   summarise(count = n(), .groups = "drop") %>%
   arrange(desc(count))
+
+if diagnosis_freq
 
 # View top 20 most frequent diagnoses
 
