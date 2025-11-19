@@ -820,6 +820,7 @@ diagnosis_freq <- df %>%
   select(diagnoses) %>%
   filter(!is.na(diagnoses) & diagnoses != "") %>%
   mutate(diagnoses =  str_replace_all(diagnoses, '; ', ';')) %>%
+  mutate(diagnoses =  str_replace_all(diagnoses, 'Berdasarkan pemeriksaan yang telah dilakukan dapat disimpulkan sebagai berikut :\n', ';')) %>%
   separate_rows(diagnoses, sep = ";") %>%        # Split by ;
     separate_rows(diagnoses, sep = "\n") %>%        # Split by ;
   mutate(diagnoses =  str_trim(diagnoses)) %>%    # Remove extra spaces
